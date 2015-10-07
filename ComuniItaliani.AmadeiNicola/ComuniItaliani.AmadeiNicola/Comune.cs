@@ -23,7 +23,7 @@ namespace ComuniItaliani.AmadeiNicola
 
         public string Visualizzati()
         {
-            return _nome.PadRight(30) + _popolazione.ToString().PadRight(8) + _codRegione.ToString().PadRight(6);
+            return _nome.PadRight(30) + _popolazione.ToString().PadRight(12) + _codRegione.ToString().PadRight(10);
         }
         public string Nome { get { return _nome; } }
         public double Popolazione { get { return _popolazione; } }

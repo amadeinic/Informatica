@@ -19,11 +19,12 @@ namespace ComuniItaliani.AmadeiNicola
         }
         //Nicola Amadei 2015 - Comuni Italiani
 
-        //GLOBAL AREA
+        //GLOBAL AREA_____________________________//
         List<Comune> comuni = new List<Comune>();
         List<Regione> regioni = new List<Regione>();
         bool comuniCaricati = false, regioniCaricate = false;
-
+        string intestazioneListB = "Nome".PadRight(30) + "Popolaz.".PadRight(12) + "Cod.Reg.".PadRight(10);
+        //________________________________________//
         private void frmMain_Load(object sender, EventArgs e)
         {
             //preparo la form
@@ -33,14 +34,16 @@ namespace ComuniItaliani.AmadeiNicola
 
         private void btnCaricaComuni_Click(object sender, EventArgs e)
         {
-            StreamReader sr = new StreamReader("comuni.csv");
+            //Utilizzare due bottoni per i due file è ripetitivo, ma rende meglio l'idea ;)  
             try
             {
-                //finchè non finisce il file
+                StreamReader sr = new StreamReader("comuni.csv");
+                //finchè non finisce il file, nessun header nel csv quindi leggo subito comuni
                 while (sr.EndOfStream != true)
                 {
                     comuni.Add(new Comune(sr.ReadLine()));
                 }
+                sr.Close();
                 //interfaccia interattiva
                 comuniCaricati = true;
                 btnCaricaComuni.Text = "Comuni OK";
@@ -50,12 +53,8 @@ namespace ComuniItaliani.AmadeiNicola
             {
                 MessageBox.Show("Non è stato possibile caricare il file dei comuni\nControlla e riprova!", "Errore di caricamento");
             }
-            finally
-            {
-                //chiudo in ogni caso
-                sr.Close();
-            }
 
+            //abilito il bottone per eseguire query solo se tutti e due i file sono stati caricati.
             if (comuniCaricati && regioniCaricate)
             {
                 btnInterroga.Enabled = true;
@@ -65,14 +64,16 @@ namespace ComuniItaliani.AmadeiNicola
 
         private void btnCaricaRegioni_Click(object sender, EventArgs e)
         {
-            StreamReader sr = new StreamReader("regioni.csv");
+
             try
             {
+                StreamReader sr = new StreamReader("regioni.csv");
                 //fino alla fine dello stream
                 while (sr.EndOfStream != true)
                 {
                     regioni.Add(new Regione(sr.ReadLine()));
                 }
+                sr.Close();
                 //interfaccia interattiva
                 regioniCaricate = true;
                 btnCaricaRegioni.Text = "Regioni OK";
@@ -82,11 +83,7 @@ namespace ComuniItaliani.AmadeiNicola
             {
                 MessageBox.Show("Non è stato possibile caricare il file delle regioni\nControlla e riprova!", "Errore di caricamento");
             }
-            finally
-            {
-                sr.Close();
-            }
-            
+
             if (comuniCaricati && regioniCaricate)
             {
                 btnInterroga.Enabled = true;
@@ -100,6 +97,7 @@ namespace ComuniItaliani.AmadeiNicola
             {
                 case 0: //per nome completo
                     {
+                        lstSchermo.Items.Add(intestazioneListB);
                         foreach (Comune c in comuni)
                         {
                             if (c.Nome.ToUpper() == txtParametro.Text.ToUpper())
@@ -111,24 +109,67 @@ namespace ComuniItaliani.AmadeiNicola
                     }
                 case 1: //per nome paraziale
                     {
-                        foreach (Comune c in comuni)
+                        lstSchermo.Items.Add(intestazioneListB);
+                        bool iniziaCon = false, finisceCon = false;
+                        string daCercare = "", stringaCompleta = txtParametro.Text;
+                        //Prima controllo dove si trova il carattere jolly
+                        if (stringaCompleta.Substring(0, 1) == "%")
                         {
-                            if (c.Nome.ToUpper().Contains(txtParametro.Text.ToUpper()))
+                            iniziaCon = true;
+                        }
+                        if (stringaCompleta.Substring(stringaCompleta.Length - 1, 1) == "%")
+                        {
+                            finisceCon = true;
+                        }
+                        //poi valuto i vari casi
+                        if (iniziaCon && !finisceCon)
+                        {
+                            daCercare = stringaCompleta.Substring(1, stringaCompleta.Length - 1);
+
+                            foreach (Comune c in comuni)
                             {
-                                lstSchermo.Items.Add(c.Visualizzati());
+                                if (c.Nome.ToUpper().EndsWith(daCercare.ToUpper()))
+                                {
+                                    lstSchermo.Items.Add(c.Visualizzati());
+                                }
+                            }
+                        }
+                        if (finisceCon && !iniziaCon)
+                        {
+                            daCercare = stringaCompleta.Substring(0, stringaCompleta.Length - 1);
+                            //usiamo un endswith
+                            foreach (Comune c in comuni)
+                            {
+                                if (c.Nome.ToUpper().StartsWith(daCercare.ToUpper()))
+                                {
+                                    lstSchermo.Items.Add(c.Visualizzati());
+                                }
+                            }
+                        }
+                        if (iniziaCon && finisceCon)
+                        {
+                            daCercare = stringaCompleta.Substring(1, stringaCompleta.Length - 2);
+                            //usiamo un contains
+                            foreach (Comune c in comuni)
+                            {
+                                if (c.Nome.ToUpper().Contains(daCercare.ToUpper()))
+                                {
+                                    lstSchermo.Items.Add(c.Visualizzati());
+                                }
                             }
                         }
                         break;
-
                     }
                 case 2: //per regione
                     {
+                        lstSchermo.Items.Add(intestazioneListB);
                         int codDaCercare = 0;
                         foreach (Regione r in regioni)
                         {
                             if (r.Nome.ToUpper() == txtParametro.Text.ToUpper())
                             {
                                 codDaCercare = r.CodiceRegione;
+                                break;
                             }
                         }
                         foreach (Comune c in comuni)
@@ -149,6 +190,7 @@ namespace ComuniItaliani.AmadeiNicola
                             if (r.Nome.ToUpper() == txtParametro.Text.ToUpper())
                             {
                                 codDaCercare = r.CodiceRegione;
+                                break;
                             }
                         }
                         foreach (Comune c in comuni)
@@ -163,14 +205,16 @@ namespace ComuniItaliani.AmadeiNicola
                     }
                 case 4: //comune popoloso
                     {
+                        lstSchermo.Items.Add(intestazioneListB);
                         int codDaCercare = 0;
-                        string comuneMax = "";
+                        string comuneMax = "Not found";
                         double maxPop = 0;
                         foreach (Regione r in regioni)
                         {
                             if (r.Nome.ToUpper() == txtParametro.Text.ToUpper())
                             {
                                 codDaCercare = r.CodiceRegione;
+                                break;
                             }
                         }
                         foreach (Comune c in comuni)
@@ -181,18 +225,11 @@ namespace ComuniItaliani.AmadeiNicola
                                 if (c.Popolazione > maxPop)
                                 {
                                     maxPop = c.Popolazione;
-                                    comuneMax = c.Nome;
+                                    comuneMax = c.Visualizzati();
                                 }
                             }
                         }
-                        //visualizzo
-                        foreach (Comune c in comuni)
-                        {
-                            if (c.Nome == comuneMax)
-                            {
-                                lstSchermo.Items.Add(c.Visualizzati());
-                            }
-                        }
+                        lstSchermo.Items.Add(comuneMax);
                         break;
                     }
             }
